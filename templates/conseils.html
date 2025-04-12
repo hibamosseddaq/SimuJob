@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conseils pour l'entretien</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>🌟 Conseils pour réussir votre entretien : {{ job }}</h1>
+
+    <div class="advice-container">
+        <div class="advice-section">
+            <h2>Avant l'entretien</h2>
+            <ul>
+                <li>Recherchez l'entreprise et le poste en profondeur</li>
+                <li>Préparez des questions pertinentes à poser</li>
+                <li>Entraînez-vous à répondre aux questions fréquentes</li>
+                <li>Dormez bien la veille de l'entretien</li>
+            </ul>
+        </div>
+
+        <div class="advice-section">
+            <h2>Pendant l'entretien</h2>
+            <ul>
+                <li>Maintenez un contact visuel et une posture positive</li>
+                <li>Écoutez attentivement avant de répondre</li>
+                <li>Utilisez la méthode STAR pour les questions comportementales</li>
+                <li>Soyez authentique tout en restant professionnel</li>
+            </ul>
+        </div>
+
+        <div class="advice-section">
+            <h2>Pour le poste de {{ job }}</h2>
+            <ul>
+                {% if job == "Développeur Web" %}
+                    <li>Préparez-vous à parler de projets concrets que vous avez réalisés</li>
+                    <li>Soyez prêt à expliquer votre approche de résolution de problèmes</li>
+                    <li>Mentionnez votre capacité à travailler en équipe et à communiquer</li>
+                    <li>Discutez de votre veille technologique et apprentissage continu</li>
+                {% elif job == "Data Scientist" %}
+                    <li>Soyez prêt à discuter de projets d'analyse de données</li>
+                    <li>Expliquez comment vous communiquez des résultats techniques à des non-spécialistes</li>
+                    <li>Soyez prêt à discuter des méthodologies que vous utilisez</li>
+                    <li>Montrez votre capacité à extraire des insights métier des données</li>
+                {% else %}
+                    <li>Mettez en avant votre expertise technique spécifique au poste</li>
+                    <li>Parlez de vos réalisations passées et des défis que vous avez surmontés</li>
+                    <li>Montrez votre capacité d'adaptation et d'apprentissage</li>
+                    <li>Expliquez comment vous pouvez apporter de la valeur à l'entreprise</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="advice-section">
+            <h2>Après l'entretien</h2>
+            <ul>
+                <li>Envoyez un e-mail de remerciement dans les 24 heures</li>
+                <li>Faites un suivi si vous n'avez pas de nouvelles après une semaine</li>
+                <li>Analysez votre performance pour vous améliorer</li>
+                <li>Ne prenez pas personnellement un refus éventuel</li>
+            </ul>
+        </div>
+    </div>
+
+    <a href="/resultat" class="btn-secondary">Retour aux résultats</a>
+    <a href="/" class="btn-primary">Nouvelle simulation</a>
+</body>
+</html>

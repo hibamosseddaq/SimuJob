@@ -1,0 +1,65 @@
+<div class="user-details">
+    <div class="user-info">
+        <h3>{{ user.username }}</h3>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Établissement:</strong> {{ user.etablissement }}</p>
+        <p><strong>Dernière simulation:</strong> {{ user.date }}</p>
+        <p><strong>Score moyen:</strong> {{ user.average_score }}%</p>
+    </div>
+
+    <div class="simulation-history">
+        <h3>Historique des simulations</h3>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Poste</th>
+                    <th>Score</th>
+                    <th>Durée</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in user.simulations %}
+                <tr>
+                    <td>{{ sim.date }}</td>
+                    <td>{{ sim.job }}</td>
+                    <td>{{ sim.score }}%</td>
+                    <td>{{ sim.duration }} min</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="user-performance">
+        <h3>Performance par compétence</h3>
+        <canvas id="userSkillsChart"></canvas>
+    </div>
+
+    <script>
+        // Chart for user skills
+        const userSkillsCtx = document.getElementById('userSkillsChart').getContext('2d');
+        const userSkillsChart = new Chart(userSkillsCtx, {
+            type: 'radar',
+            data: {
+                labels: {{ skill_labels|tojson }},
+                datasets: [{
+                    label: 'Niveau de compétence (%)',
+                    data: {{ skill_scores|tojson }},
+                    backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                    borderColor: 'rgba(74, 144, 226, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(74, 144, 226, 1)'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</div>

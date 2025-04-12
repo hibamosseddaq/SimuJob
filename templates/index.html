@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuJob - Simulateur d'Entretien</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-briefcase"></i> SimuJob</h1>
+            <p class="tagline">Préparez-vous efficacement à vos entretiens d'embauche</p>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="welcome-section">
+            <h2><i class="fas fa-rocket"></i> Bienvenue dans votre simulateur d'entretien</h2>
+            <p>Entraînez-vous à répondre aux questions d'entretien courantes, recevez un feedback instantané et améliorez vos compétences pour décrocher le job de vos rêves !</p>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-comments"></i>
+                <h3>Questions réalistes</h3>
+                <p>Basées sur de vrais entretiens</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-chart-line"></i>
+                <h3>Analyse détaillée</h3>
+                <p>Feedback sur vos réponses</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-graduation-cap"></i>
+                <h3>Conseils personnalisés</h3>
+                <p>Pour chaque type de poste</p>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form action="/entretien" method="POST">
+                <h2>Commencez votre simulation</h2>
+
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Nom et prénom :</label>
+                    <input type="text" name="username" id="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email :</label>
+                    <input type="email" name="email" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="etablissement"><i class="fas fa-university"></i> Établissement / Université :</label>
+                    <input type="text" name="etablissement" id="etablissement" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="job"><i class="fas fa-briefcase"></i> Choisissez un poste :</label>
+                    <select name="job" id="job" required>
+                        <option value="" disabled selected>Sélectionnez un poste</option>
+                        {% for job in jobs %}
+                            <option value="{{ job }}">{{ job }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-play"></i> Commencer l'entretien
+                </button>
+            </form>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 SimuJob - Projet de fin d'études</p>
+        </footer>
+    </div>
+</body>
+</html>

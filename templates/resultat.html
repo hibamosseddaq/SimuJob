@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuJob - Résultats de l'Entretien</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="results-page">
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-bar"></i> Résultats de votre simulation</h1>
+            <div class="results-summary">
+                <p><i class="fas fa-user"></i> Candidat: {{ username }}</p>
+                <p><i class="fas fa-briefcase"></i> Poste: {{ job }}</p>
+                <p><i class="fas fa-clock"></i> Durée de l'entretien: {{ interview_duration }} minutes</p>
+                <p><i class="fas fa-star"></i> Score global: {{ overall_score }}/100</p>
+            </div>
+        </header>
+
+        <div class="score-visualization">
+            <div class="progress-circle" style="--progress: {{ overall_score }}%;">
+                <div class="progress-circle-inner">
+                    <span class="progress-text">{{ overall_score }}</span>
+                    <span class="progress-label">SCORE</span>
+                </div>
+            </div>
+
+            <div class="score-interpretation">
+                {% if overall_score >= 80 %}
+                    <h3><i class="fas fa-trophy"></i> Excellent!</h3>
+                    <p>Vos réponses sont très convaincantes. Vous êtes prêt pour l'entretien réel!</p>
+                {% elif overall_score >= 60 %}
+                    <h3><i class="fas fa-thumbs-up"></i> Bon travail!</h3>
+                    <p>Vos réponses sont bonnes dans l'ensemble. Quelques améliorations possibles.</p>
+                {% else %}
+                    <h3><i class="fas fa-tools"></i> À améliorer</h3>
+                    <p>Vos réponses nécessitent du travail. Suivez nos conseils pour progresser.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="detailed-results">
+            <h2>Analyse détaillée de vos réponses</h2>
+
+            {% for item in results %}
+                <div class="result-card {% if item.label == 'POSITIVE' %}positive{% else %}negative{% endif %}">
+                    <div class="result-header">
+                        <h3>Question {{ loop.index }}</h3>
+                        <div class="result-question">
+                            <span>{{ item.question }}</span>
+                        </div>
+                    </div>
+
+                    <div class="answer-section">
+                        <h4>Votre réponse:</h4>
+                        <p class="answer-text">{{ item.answer }}</p>
+                    </div>
+
+                    <div class="analysis-section">
+                        <div class="sentiment-analysis">
+                            <h4>Analyse du sentiment:</h4>
+                            <div class="sentiment-badge {{ item.label|lower }}">
+                                {{ item.label }}
+                                <span class="score">{{ item.score }}%</span>
+                            </div>
+                        </div>
+
+                        <div class="feedback-section">
+                            <h4>Feedback personnalisé:</h4>
+                            <p class="feedback-text">{{ item.feedback }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="action-buttons">
+            <a href="/voir_resultats" class="btn-primary"><i class="fas fa-eye"></i> Réponses modèles</a>
+            <a href="/conseils" class="btn-primary">
+                <i class="fas fa-lightbulb"></i> Conseils pour s'améliorer
+            </a>
+            <a href="/" class="btn-secondary">
+                <i class="fas fa-redo"></i> Nouvelle simulation
+            </a>
+        </div>
+    </div>
+</body>
+</html>

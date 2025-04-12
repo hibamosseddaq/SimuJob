@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuJob - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+</head>
+<body class="admin-page">
+    <div class="admin-sidebar">
+        <div class="admin-logo">
+            <h2><i class="fas fa-user-shield"></i> Admin</h2>
+        </div>
+        <nav class="admin-nav">
+            <ul>
+                <li class="active"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a></li>
+                <li><a href="#users"><i class="fas fa-users"></i> Utilisateurs</a></li>
+                <li><a href="#analytics"><i class="fas fa-chart-bar"></i> Analyses</a></li>
+                <li><a href="#questions"><i class="fas fa-question-circle"></i> Questions</a></li>
+                <li><a href="/"><i class="fas fa-sign-out-alt"></i> Quitter</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="admin-content">
+        <header class="admin-header">
+            <h1>Panneau d'administration SimuJob</h1>
+            <div class="admin-user">
+                <span>Admin</span>
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </header>
+
+        <div class="admin-section" id="dashboard">
+            <h2><i class="fas fa-tachometer-alt"></i> Tableau de bord</h2>
+
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-content">
+                        <h3>Utilisateurs</h3>
+                        <p class="stat-number">{{ stats.total_users }}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
+                    <div class="stat-content">
+                        <h3>Entretiens</h3>
+                        <p class="stat-number">{{ stats.total_interviews }}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="stat-content">
+                        <h3>Établissements</h3>
+                        <p class="stat-number">{{ stats.total_institutions }}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                    <div class="stat-content">
+                        <h3>Score moyen</h3>
+                        <p class="stat-number">{{ stats.average_score }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-card">
+                    <h3>Scores par poste</h3>
+                    <canvas id="jobScoresChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Entretiens par jour</h3>
+                    <canvas id="interviewsPerDayChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-section" id="users">
+            <h2><i class="fas fa-users"></i> Utilisateurs</h2>
+
+            <div class="search-filter">
+                <input type="text" id="userSearch" placeholder="Rechercher un utilisateur..." onkeyup="filterUsers()">
+                <select id="establishmentFilter" onchange="filterUsers()">
+                    <option value="">Tous les établissements</option>
+                    {% for etablissement in establishments %}
+                        <option value="{{ etablissement }}">{{ etablissement }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="user-table-container">
+                <table class="admin-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Établissement</th>
+                            <th>Poste</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.etablissement }}</td>
+                            <td>{{ user.job }}</td>
+                            <td>{{ user.score }}%</td>
+                            <td>{{ user.date }}</td>
+                            <td>
+                                <a href="#" class="btn-action" title="Voir détails" onclick="viewUserDetails('{{ user.username }}')">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn-action" title="Supprimer" onclick="deleteUser('{{ user.username }}')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section" id="analytics">
+            <h2><i class="fas fa-chart-bar"></i> Analyses</h2>
+
+            <div class="analytics-filters">
+                <div class="filter-group">
+                    <label for="jobFilter">Poste:</label>
+                    <select id="jobFilter">
+                        <option value="">Tous</option>
+                        {% for job in jobs %}
+                            <option value="{{ job }}">{{ job }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="dateRangeFilter">Période:</label>
+                    <select id="dateRangeFilter">
+                        <option value="7">7 derniers jours</option>
+                        <option value="30">30 derniers jours</option>
+                        <option value="90">3 derniers mois</option>
+                        <option value="all">Tout</option>
+                    </select>
+                </div>
+                <button class="btn-filter" onclick="updateAnalytics()">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-card full-width">
+                    <h3>Performance par question</h3>
+                    <canvas id="questionPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-card">
+                    <h3>Distribution des scores</h3>
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Performance par établissement</h3>
+                    <canvas id="establishmentPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-section" id="questions">
+            <h2><i class="fas fa-question-circle"></i> Gestion des questions</h2>
+
+            <div class="questions-header">
+                <div class="filter-group">
+                    <label for="questionJobFilter">Poste:</label>
+                    <select id="questionJobFilter" onchange="filterQuestions()">
+                        <option value="">Tous</option>
+                        {% for job in jobs %}
+                            <option value="{{ job }}">{{ job }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="showAddQuestionModal()">
+                    <i class="fas fa-plus"></i> Ajouter une question
+                </button>
+            </div>
+
+            <div class="question-table-container">
+                <table class="admin-table" id="questionsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Poste</th>
+                            <th>Question</th>
+                            <th>Réponse modèle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for question in all_questions %}
+                        <tr data-job="{{ question.poste }}">
+                            <td>{{ question.id }}</td>
+                            <td>{{ question.poste }}</td>
+                            <td>{{ question.question }}</td>
+                            <td class="truncate-text">{{ question.reponse }}</td>
+                            <td>
+                                <a href="#" class="btn-action" title="Modifier" onclick="editQuestion({{ question.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="#" class="btn-action" title="Supprimer" onclick="deleteQuestion({{ question.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Ajouter une question</h2>
+            <form id="questionForm" action="/admin/add_question" method="POST">
+                <input type="hidden" id="questionId" name="questionId">
+                <div class="form-group">
+                    <label for="questionPoste">Poste:</label>
+                    <select id="questionPoste" name="poste" required>
+                        {% for job in jobs %}
+                            <option value="{{ job }}">{{ job }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="questionText">Question:</label>
+                    <textarea id="questionText" name="question" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="questionAnswer">Réponse modèle:</label>
+                    <textarea id="questionAnswer" name="reponse" rows="5" required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="userDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserDetailModal()">&times;</span>
+            <h2>Détails de l'utilisateur</h2>
+            <div id="userDetailContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation tabs
+        document.querySelectorAll('.admin-nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+
+                // Hide all sections
+                document.querySelectorAll('.admin-section').forEach(section => {
+                    section.style.display = 'none';
+                });
+
+                // Display target section
+                document.getElementById(targetId).style.display = 'block';
+
+                // Update active state
+                document.querySelectorAll('.admin-nav li').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.parentElement.classList.add('active');
+            });
+        });
+
+        // Show only dashboard by default
+        document.querySelectorAll('.admin-section').forEach(section => {
+            if (section.id !== 'dashboard') {
+                section.style.display = 'none';
+            }
+        });
+
+        // Charts initialization
+        window.onload = function() {
+            // Job scores chart
+            const jobScoresCtx = document.getElementById('jobScoresChart').getContext('2d');
+            const jobScoresChart = new Chart(jobScoresCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ job_names|tojson }},
+                    datasets: [{
+                        label: 'Score moyen (%)',
+                        data: {{ job_scores|tojson }},
+                        backgroundColor: 'rgba(74, 144, 226, 0.7)',
+                        borderColor: 'rgba(74, 144, 226, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Interviews per day chart
+            const interviewsPerDayCtx = document.getElementById('interviewsPerDayChart').getContext('2d');
+            const interviewsPerDayChart = new Chart(interviewsPerDayCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ dates|tojson }},
+                    datasets: [{
+                        label: 'Nombre d\'entretiens',
+                        data: {{ interviews_per_day|tojson }},
+                        backgroundColor: 'rgba(80, 200, 120, 0.2)',
+                        borderColor: 'rgba(80, 200, 120, 1)',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Question performance chart
+            const questionPerformanceCtx = document.getElementById('questionPerformanceChart').getContext('2d');
+            const questionPerformanceChart = new Chart(questionPerformanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ question_labels|tojson }},
+                    datasets: [{
+                        label: 'Score moyen (%)',
+                        data: {{ question_scores|tojson }},
+                        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Score distribution chart
+            const scoreDistributionCtx = document.getElementById('scoreDistributionChart').getContext('2d');
+            const scoreDistributionChart = new Chart(scoreDistributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+                    datasets: [{
+                        data: {{ score_distribution|tojson }},
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(255, 159, 64, 0.7)',
+                            'rgba(255, 205, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(54, 162, 235, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(255, 159, 64)',
+                            'rgb(255, 205, 86)',
+                            'rgb(75, 192, 192)',
+                            'rgb(54, 162, 235)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Establishment performance chart
+            const establishmentPerformanceCtx = document.getElementById('establishmentPerformanceChart').getContext('2d');
+            const establishmentPerformanceChart = new Chart(establishmentPerformanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ establishment_names|tojson }},
+                    datasets: [{
+                        label: 'Score moyen (%)',
+                        data: {{ establishment_scores|tojson }},
+                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        };
+
+        // Filter users function
+        function filterUsers() {
+            const searchInput = document.getElementById('userSearch').value.toLowerCase();
+            const establishmentFilter = document.getElementById('establishmentFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+
+            rows.forEach(row => {
+                const username = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const establishment = row.cells[2].textContent.toLowerCase();
+
+                const matchesSearch = username.includes(searchInput) || email.includes(searchInput);
+                const matchesEstablishment = establishmentFilter === '' || establishment === establishmentFilter;
+
+                if (matchesSearch && matchesEstablishment) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Filter questions by job
+        function filterQuestions() {
+            const jobFilter = document.getElementById('questionJobFilter').value;
+            const rows = document.querySelectorAll('#questionsTable tbody tr');
+
+            rows.forEach(row => {
+                const job = row.getAttribute('data-job');
+                if (jobFilter === '' || job === jobFilter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Modal functions
+        function showAddQuestionModal() {
+            document.getElementById('modalTitle').textContent = 'Ajouter une question';
+            document.getElementById('questionId').value = '';
+            document.getElementById('questionText').value = '';
+            document.getElementById('questionAnswer').value = '';
+            document.getElementById('questionForm').action = '/admin/add_question';
+            document.getElementById('questionModal').style.display = 'block';
+        }
+
+        function editQuestion(id) {
+            fetch(`/admin/get_question/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalTitle').textContent = 'Modifier la question';
+                    document.getElementById('questionId').value = id;
+                    document.getElementById('questionPoste').value = data.poste;
+                    document.getElementById('questionText').value = data.question;
+                    document.getElementById('questionAnswer').value = data.reponse;
+                    document.getElementById('questionForm').action = '/admin/edit_question';
+                    document.getElementById('questionModal').style.display = 'block';
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('questionModal').style.display = 'none';
+        }
+
+        // Close modal when clicking on X
+        document.querySelectorAll('.close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+
+        function deleteQuestion(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
+                fetch(`/admin/delete_question/${id}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove row from table
+                            document.querySelector(`#questionsTable tr[data-id="${id}"]`).remove();
+                            alert('Question supprimée avec succès');
+                        } else {
+                            alert('Erreur lors de la suppression');
+                        }
+                    });
+            }
+        }
+
+        function viewUserDetails(username) {
+            fetch(`/admin/user_details/${encodeURIComponent(username)}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('userDetailContent').innerHTML = html;
+                    document.getElementById('userDetailModal').style.display = 'block';
+                });
+        }
+
+        function closeUserDetailModal() {
+            document.getElementById('userDetailModal').style.display = 'none';
+        }
+
+        function deleteUser(username) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${username} et tous ses résultats ?`)) {
+                fetch(`/admin/delete_user/${encodeURIComponent(username)}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove all rows with this username
+                            document.querySelectorAll(`#usersTable tbody tr`).forEach(row => {
+                                if (row.cells[0].textContent === username) {
+                                    row.remove();
+                                }
+                            });
+                            alert('Utilisateur supprimé avec succès');
+                        } else {
+                            alert('Erreur lors de la suppression');
+                        }
+                    });
+            }
+        }
+
+        function updateAnalytics() {
+            const jobFilter = document.getElementById('jobFilter').value;
+            const dateRange = document.getElementById('dateRangeFilter').value;
+
+            fetch(`/admin/update_analytics?job=${jobFilter}&dateRange=${dateRange}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update charts with new data
+                    // This would update the charts with the new filtered data
+                    alert('Données mises à jour');
+                });
+        }
+    </script>
+</body>
+</html>

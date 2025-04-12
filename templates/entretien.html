@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuJob - Entretien pour {{ job }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // Timer pour l'entretien
+        let startTime;
+        let timerInterval;
+
+        function startTimer() {
+            startTime = new Date().getTime();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+
+            document.getElementById('timer').textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        window.onload = startTimer;
+    </script>
+</head>
+<body class="interview-page">
+    <div class="interview-header">
+        <h1><i class="fas fa-comments"></i> Entretien : {{ job }}</h1>
+        <div class="interview-info">
+            <p><i class="fas fa-user"></i> Candidat: {{ username }}</p>
+            <p><i class="fas fa-clock"></i> Durée: <span id="timer">00:00</span></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="instructions">
+            <h2><i class="fas fa-info-circle"></i> Instructions</h2>
+            <ul>
+                <li>Répondez à chaque question comme si vous étiez en entretien réel</li>
+                <li>Soyez concis mais complet, en donnant des exemples concrets</li>
+                <li>Prenez votre temps pour réfléchir avant de répondre</li>
+                <li>Vous recevrez une analyse détaillée de vos réponses à la fin</li>
+            </ul>
+        </div>
+
+        <form action="/resultat" method="POST" id="interview-form">
+            {% for question in questions %}
+                <div class="question-block" id="question-{{ loop.index }}">
+                    <div class="question-header">
+                        <span class="question-number">Question {{ loop.index }}/{{ questions|length }}</span>
+                        <span class="question-category">{{ job }}</span>
+                    </div>
+
+                    <p class="question-text">{{ question }}</p>
+
+                    <textarea
+                        name="answer"
+                        rows="5"
+                        placeholder="Votre réponse ici..."
+                        required
+                        class="answer-textarea"
+                    ></textarea>
+
+                    <input type="hidden" name="question_id" value="{{ loop.index0 }}">
+
+                    {% if not loop.last %}
+                        <div class="navigation-buttons">
+                            <button type="button" class="btn-next" onclick="document.getElementById('question-{{ loop.index + 1 }}').scrollIntoView({behavior: 'smooth'})">
+                                Question suivante <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="submit-container">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check-circle"></i> Terminer l'entretien
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

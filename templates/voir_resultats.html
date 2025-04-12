@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuJob - Voir les résultats</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-file-alt"></i> Résultats complets</h1>
+            <div class="results-summary">
+                <p><i class="fas fa-user"></i> Candidat: {{ username }}</p>
+                <p><i class="fas fa-briefcase"></i> Poste: {{ job }}</p>
+            </div>
+        </header>
+
+        <div class="detailed-results">
+            <h2>Questions, réponses et solutions</h2>
+
+            {% for item in resultats %}
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3>Question {{ loop.index }}</h3>
+                    </div>
+
+                    <div class="question-section">
+                        <h4><i class="fas fa-question-circle"></i> Question:</h4>
+                        <p class="question-text">{{ item.question }}</p>
+                    </div>
+
+                    <div class="answer-section">
+                        <h4><i class="fas fa-comment"></i> Votre réponse:</h4>
+                        <p class="answer-text">{{ item.reponse_utilisateur }}</p>
+                    </div>
+
+                    <div class="model-answer-section">
+                        <h4><i class="fas fa-check-circle"></i> Réponse modèle:</h4>
+                        <p class="model-answer-text">{{ item.bonne_reponse }}</p>
+                    </div>
+
+                    <div class="feedback-section">
+                        <h4><i class="fas fa-lightbulb"></i> Feedback:</h4>
+                        <p class="feedback-text">{{ item.feedback }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="action-buttons">
+            <a href="/resultat" class="btn-primary">
+                <i class="fas fa-chart-bar"></i> Retour aux résultats
+            </a>
+            <a href="/conseils" class="btn-primary">
+                <i class="fas fa-lightbulb"></i> Voir les conseils
+            </a>
+            <a href="/" class="btn-secondary">
+                <i class="fas fa-redo"></i> Nouvelle simulation
+            </a>
+        </div>
+    </div>
+</body>
+</html>
