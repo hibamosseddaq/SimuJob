@@ -9,7 +9,7 @@ import time
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'simujob_secret_key_2025'  # à remplacer par une clé secrète plus sécurisée en production
+app.secret_key = os.environ.get('SECRET_KEY', 'simujob_secret_key_2025')
 
 # Configuration de la base de données
 DATABASE = 'simujob.db'
@@ -811,4 +811,5 @@ def server_error(e):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    port = os.environ.get('PORT', 5000)
+    app.run(host='0.0.0.0', port=int(port), debug=False)
