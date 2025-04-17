@@ -19,11 +19,11 @@
                 <li><a href="#users"><i class="fas fa-users"></i> Utilisateurs</a></li>
                 <li><a href="#analytics"><i class="fas fa-chart-bar"></i> Analyses</a></li>
                 <li><a href="#questions"><i class="fas fa-question-circle"></i> Questions</a></li>
+                <li><a href="#user-answers"><i class="fas fa-comments"></i> Réponses Utilisateurs</a></li>
                 <li><a href="/"><i class="fas fa-sign-out-alt"></i> Quitter</a></li>
             </ul>
         </nav>
     </div>
-
     <div class="admin-content">
         <header class="admin-header">
             <h1>Panneau d'administration SimuJob</h1>
@@ -35,7 +35,6 @@
 
         <div class="admin-section" id="dashboard">
             <h2><i class="fas fa-tachometer-alt"></i> Tableau de bord</h2>
-
             <div class="admin-stats">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -47,7 +46,7 @@
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
                     <div class="stat-content">
-                        <h3>Entretiens</h3>
+                        <h3>Entretien</h3>
                         <p class="stat-number">{{ stats.total_interviews }}</p>
                     </div>
                 </div>
@@ -81,17 +80,15 @@
 
         <div class="admin-section" id="users">
             <h2><i class="fas fa-users"></i> Utilisateurs</h2>
-
             <div class="search-filter">
                 <input type="text" id="userSearch" placeholder="Rechercher un utilisateur..." onkeyup="filterUsers()">
                 <select id="establishmentFilter" onchange="filterUsers()">
                     <option value="">Tous les établissements</option>
-                    {% for etablissement in establishments %}
-                        <option value="{{ etablissement }}">{{ etablissement }}</option>
+                    {% for etablissement in etablissements %}
+                    <option value="{{ etablissement }}">{{ etablissement }}</option>
                     {% endfor %}
                 </select>
             </div>
-
             <div class="user-table-container">
                 <table class="admin-table" id="usersTable">
                     <thead>
@@ -106,7 +103,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for user in users %}
+                        {% for user in utilisateurs %}
                         <tr>
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
@@ -131,19 +128,18 @@
 
         <div class="admin-section" id="analytics">
             <h2><i class="fas fa-chart-bar"></i> Analyses</h2>
-
             <div class="analytics-filters">
                 <div class="filter-group">
-                    <label for="jobFilter">Poste:</label>
+                    <label for="jobFilter">Poste :</label>
                     <select id="jobFilter">
                         <option value="">Tous</option>
                         {% for job in jobs %}
-                            <option value="{{ job }}">{{ job }}</option>
+                        <option value="{{ job }}">{{ job }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="dateRangeFilter">Période:</label>
+                    <label for="dateRangeFilter">Période :</label>
                     <select id="dateRangeFilter">
                         <option value="7">7 derniers jours</option>
                         <option value="30">30 derniers jours</option>
@@ -162,7 +158,6 @@
                     <canvas id="questionPerformanceChart"></canvas>
                 </div>
             </div>
-
             <div class="chart-container">
                 <div class="chart-card">
                     <h3>Distribution des scores</h3>
@@ -177,14 +172,13 @@
 
         <div class="admin-section" id="questions">
             <h2><i class="fas fa-question-circle"></i> Gestion des questions</h2>
-
             <div class="questions-header">
                 <div class="filter-group">
-                    <label for="questionJobFilter">Poste:</label>
+                    <label for="questionJobFilter">Poste :</label>
                     <select id="questionJobFilter" onchange="filterQuestions()">
                         <option value="">Tous</option>
                         {% for job in jobs %}
-                            <option value="{{ job }}">{{ job }}</option>
+                        <option value="{{ job }}">{{ job }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -192,7 +186,6 @@
                     <i class="fas fa-plus"></i> Ajouter une question
                 </button>
             </div>
-
             <div class="question-table-container">
                 <table class="admin-table" id="questionsTable">
                     <thead>
@@ -200,13 +193,13 @@
                             <th>ID</th>
                             <th>Poste</th>
                             <th>Question</th>
-                            <th>Réponse modèle</th>
+                            <th>Modèle de réponse</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for question in all_questions %}
-                        <tr data-job="{{ question.poste }}">
+                        <tr data-job="{{ question.poste }}" data-id="{{ question.id }}">
                             <td>{{ question.id }}</td>
                             <td>{{ question.poste }}</td>
                             <td>{{ question.question }}</td>
@@ -225,29 +218,125 @@
                 </table>
             </div>
         </div>
+
+        <div class="admin-section" id="user-answers">
+            <h2><i class="fas fa-comments"></i> Réponses des utilisateurs</h2>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="admin-table" id="dataTableResponses" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Poste</th>
+                                <th>Date</th>
+                                <th>Question</th>
+                                <th>Réponse utilisateur</th>
+                                <th>Réponse modèle</th>
+                                <th>Score</th>
+                                <th>Évaluation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for response in user_responses %}
+                            <tr>
+                                <td>{{ response.username }}</td>
+                                <td>{{ response.job }}</td>
+                                <td>{{ response.date }}</td>
+                                <td>{{ response.question_text }}</td>
+                                <td>{{ response.user_answer }}</td>
+                                <td>{{ response.model_answer }}</td>
+                                <td>{{ response.question_score }}</td>
+                                <td>
+                                    {% if response.label == "POSITIVE" %}
+                                    <span class="badge badge-success">Positif</span>
+                                    {% elif response.label == "NEUTRAL" %}
+                                    <span class="badge badge-warning">Neutre</span>
+                                    {% else %}
+                                    <span class="badge badge-danger">Négatif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-action" data-toggle="modal" data-target="#responseDetailModal{{ loop.index }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Modal pour afficher les détails de la réponse -->
+                            <div class="modal fade" id="responseDetailModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="responseDetailModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="responseDetailModalLabel">Détails de la réponse</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">×</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h6>Utilisateur : {{ response.username }}</h6>
+                                            <h6>Poste : {{ response.job }}</h6>
+                                            <h6>Date : {{ response.date }}</h6>
+                                            <hr>
+                                            <div class="form-group">
+                                                <label><strong>Question :</strong></label>
+                                                <p>{{ response.question_text }}</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <label><strong>Réponse de l'utilisateur :</strong></label>
+                                                <div class="p-3 bg-light">{{ response.user_answer }}</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label><strong>Réponse attendue :</strong></label>
+                                                <div class="p-3 bg-light">{{ response.model_answer }}</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label><strong>Commentaire :</strong></label>
+                                                <div class="p-3 bg-light">{{ response.feedback }}</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label><strong>Score :</strong> {{ response.question_score }}/100</label>
+                                                <div class="progress">
+                                                    <div class="progress-bar {% if response.question_score >= 70 %}bg-success {% elif response.question_score >= 50 %}bg-warning {% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ response.question_score }}%" aria-valuenow="{{ response.question_score }}" aria-valuemin="0" aria-valuemax="100">
+                                                        {{ response.question_score }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Modaux -->
     <div id="questionModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close">×</span>
             <h2 id="modalTitle">Ajouter une question</h2>
             <form id="questionForm" action="/admin/add_question" method="POST">
                 <input type="hidden" id="questionId" name="questionId">
                 <div class="form-group">
-                    <label for="questionPoste">Poste:</label>
+                    <label for="questionPoste">Poste :</label>
                     <select id="questionPoste" name="poste" required>
                         {% for job in jobs %}
-                            <option value="{{ job }}">{{ job }}</option>
+                        <option value="{{ job }}">{{ job }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="questionText">Question:</label>
+                    <label for="questionText">Question :</label>
                     <textarea id="questionText" name="question" rows="3" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="questionAnswer">Réponse modèle:</label>
+                    <label for="questionAnswer">Modèle de réponse :</label>
                     <textarea id="questionAnswer" name="reponse" rows="5" required></textarea>
                 </div>
                 <div class="form-actions">
@@ -260,30 +349,30 @@
 
     <div id="userDetailModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeUserDetailModal()">&times;</span>
+            <span class="close" onclick="closeUserDetailModal()">×</span>
             <h2>Détails de l'utilisateur</h2>
             <div id="userDetailContent">
-                <!-- Content will be loaded dynamically -->
+                <!-- Le contenu sera chargé dynamiquement -->
             </div>
         </div>
     </div>
 
     <script>
-        // Navigation tabs
+        // Onglets de navigation
         document.querySelectorAll('.admin-nav a').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const targetId = this.getAttribute('href').substring(1);
 
-                // Hide all sections
+                // Masquer toutes les sections
                 document.querySelectorAll('.admin-section').forEach(section => {
                     section.style.display = 'none';
                 });
 
-                // Display target section
+                // Afficher la section cible
                 document.getElementById(targetId).style.display = 'block';
 
-                // Update active state
+                // Mettre à jour l'état actif
                 document.querySelectorAll('.admin-nav li').forEach(item => {
                     item.classList.remove('active');
                 });
@@ -291,16 +380,16 @@
             });
         });
 
-        // Show only dashboard by default
+        // Afficher uniquement le tableau de bord par défaut
         document.querySelectorAll('.admin-section').forEach(section => {
             if (section.id !== 'dashboard') {
                 section.style.display = 'none';
             }
         });
 
-        // Charts initialization
+        // Initialisation des graphiques
         window.onload = function() {
-            // Job scores chart
+            // Graphique des scores des tâches
             const jobScoresCtx = document.getElementById('jobScoresChart').getContext('2d');
             const jobScoresChart = new Chart(jobScoresCtx, {
                 type: 'bar',
@@ -325,7 +414,7 @@
                 }
             });
 
-            // Interviews per day chart
+            // Graphique des entretiens par jour
             const interviewsPerDayCtx = document.getElementById('interviewsPerDayChart').getContext('2d');
             const interviewsPerDayChart = new Chart(interviewsPerDayCtx, {
                 type: 'line',
@@ -353,7 +442,7 @@
                 }
             });
 
-            // Question performance chart
+            // Graphique de performance des questions
             const questionPerformanceCtx = document.getElementById('questionPerformanceChart').getContext('2d');
             const questionPerformanceChart = new Chart(questionPerformanceCtx, {
                 type: 'bar',
@@ -379,7 +468,7 @@
                 }
             });
 
-            // Score distribution chart
+            // Graphique de distribution des scores
             const scoreDistributionCtx = document.getElementById('scoreDistributionChart').getContext('2d');
             const scoreDistributionChart = new Chart(scoreDistributionCtx, {
                 type: 'pie',
@@ -414,7 +503,7 @@
                 }
             });
 
-            // Establishment performance chart
+            // Graphique de performance de l'établissement
             const establishmentPerformanceCtx = document.getElementById('establishmentPerformanceChart').getContext('2d');
             const establishmentPerformanceChart = new Chart(establishmentPerformanceCtx, {
                 type: 'bar',
@@ -440,7 +529,7 @@
             });
         };
 
-        // Filter users function
+        // Fonction de filtrage des utilisateurs
         function filterUsers() {
             const searchInput = document.getElementById('userSearch').value.toLowerCase();
             const establishmentFilter = document.getElementById('establishmentFilter').value.toLowerCase();
@@ -462,7 +551,7 @@
             });
         }
 
-        // Filter questions by job
+        // Filtrer les questions par fonction professionnelle
         function filterQuestions() {
             const jobFilter = document.getElementById('questionJobFilter').value;
             const rows = document.querySelectorAll('#questionsTable tbody tr');
@@ -477,7 +566,7 @@
             });
         }
 
-        // Modal functions
+        // Fonctions modales
         function showAddQuestionModal() {
             document.getElementById('modalTitle').textContent = 'Ajouter une question';
             document.getElementById('questionId').value = '';
@@ -505,14 +594,14 @@
             document.getElementById('questionModal').style.display = 'none';
         }
 
-        // Close modal when clicking on X
+        // Fermer la modale en cliquant sur le X
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', function() {
                 this.closest('.modal').style.display = 'none';
             });
         });
 
-        // Close modal when clicking outside
+        // Fermer la modale en cliquant en dehors
         window.addEventListener('click', function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
@@ -521,17 +610,19 @@
 
         function deleteQuestion(id) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
-                fetch(`/admin/delete_question/${id}`, { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Remove row from table
-                            document.querySelector(`#questionsTable tr[data-id="${id}"]`).remove();
-                            alert('Question supprimée avec succès');
-                        } else {
-                            alert('Erreur lors de la suppression');
-                        }
-                    });
+                fetch(`/admin/delete_question/${id}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Supprimer la ligne de la table
+                        document.querySelector(`#questionsTable tr[data-id="${id}"]`).remove();
+                        alert('Question supprimée avec succès');
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                });
             }
         }
 
@@ -550,21 +641,23 @@
 
         function deleteUser(username) {
             if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${username} et tous ses résultats ?`)) {
-                fetch(`/admin/delete_user/${encodeURIComponent(username)}`, { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Remove all rows with this username
-                            document.querySelectorAll(`#usersTable tbody tr`).forEach(row => {
-                                if (row.cells[0].textContent === username) {
-                                    row.remove();
-                                }
-                            });
-                            alert('Utilisateur supprimé avec succès');
-                        } else {
-                            alert('Erreur lors de la suppression');
-                        }
-                    });
+                fetch(`/admin/delete_user/${encodeURIComponent(username)}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Supprimer toutes les lignes avec ce nom d'utilisateur
+                        document.querySelectorAll(`#usersTable tbody tr`).forEach(row => {
+                            if (row.cells[0].textContent === username) {
+                                row.remove();
+                            }
+                        });
+                        alert('Utilisateur supprimé avec succès');
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                });
             }
         }
 
@@ -575,8 +668,7 @@
             fetch(`/admin/update_analytics?job=${jobFilter}&dateRange=${dateRange}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Update charts with new data
-                    // This would update the charts with the new filtered data
+                    // Mettre à jour les graphiques avec de nouvelles données
                     alert('Données mises à jour');
                 });
         }

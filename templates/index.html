@@ -70,9 +70,15 @@
                     <label for="job"><i class="fas fa-briefcase"></i> Choisissez un poste :</label>
                     <select name="job" id="job" required>
                         <option value="" disabled selected>Sélectionnez un poste</option>
-                        {% for job in jobs %}
-                            <option value="{{ job }}">{{ job }}</option>
-                        {% endfor %}
+                        {% if jobs %}
+                            {% for job in jobs %}
+                                <option value="{{ job }}">{{ job }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="developpeur">Développeur</option>
+                            <option value="designer">Designer</option>
+                            <option value="manager">Manager</option>
+                        {% endif %}
                     </select>
                 </div>
 
@@ -83,7 +89,7 @@
         </div>
 
         <footer>
-            <p>&copy; 2025 SimuJob - Projet de fin d'études</p>
+            <p>&copy; SimuJob - CODE-212</p>
         </footer>
     </div>
 </body>

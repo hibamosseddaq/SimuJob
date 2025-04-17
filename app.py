@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 import os
 import json
 import datetime
@@ -38,6 +38,52 @@ def load_questions_from_excel():
     except Exception as e:
         print(f"Erreur lors du chargement des questions: {e}")
         return {}
+
+
+# Fonction pour exporter les résultats vers Excel
+def export_results_to_excel():
+    conn = get_db_connection()
+
+    # Récupérer toutes les données des simulations et réponses
+    results_data = conn.execute('''
+        SELECT u.username, u.email, u.etablissement, s.job, s.score, 
+               s.duration, datetime(s.date) as date,
+               q.question_text, q.user_answer, q.model_answer, q.score as question_score, 
+               q.label, q.feedback
+        FROM users u
+        JOIN simulations s ON u.id = s.user_id
+        JOIN user_answers q ON s.id = q.simulation_id
+        ORDER BY s.date DESC
+    ''').fetchall()
+
+    conn.close()
+
+    # Convertir en liste de dictionnaires pour pandas
+    results_list = []
+    for row in results_data:
+        results_list.append({
+            'Nom': row['username'],
+            'Email': row['email'],
+            'Établissement': row['etablissement'],
+            'Poste': row['job'],
+            'Score Global': row['score'],
+            'Durée (min)': row['duration'],
+            'Date': row['date'],
+            'Question': row['question_text'],
+            'Réponse Utilisateur': row['user_answer'],
+            'Réponse Modèle': row['model_answer'],
+            'Score Question': row['question_score'],
+            'Évaluation': row['label'],
+            'Commentaire': row['feedback']
+        })
+
+    # Créer le DataFrame et l'exporter vers Excel
+    try:
+        df = pd.DataFrame(results_list)
+        df.to_excel('resultats.xlsx', index=False)
+        print("Exportation Excel réussie")
+    except Exception as e:
+        print(f"Erreur lors de l'exportation des résultats vers Excel: {e}")
 
 
 # Variables globales
@@ -203,7 +249,6 @@ def entretien():
 
         return render_template('entretien.html', questions=session['questions'], username=username, job=job)
 
-
 @app.route('/resultat', methods=['POST', 'GET'])
 def resultat():
     if request.method == 'POST':
@@ -211,12 +256,19 @@ def resultat():
         answers = []
 
         # Récupérer toutes les réponses du formulaire
-        for i in range(len(session['questions'])):
-            question_id = request.form.getlist('question_id')[i]
-            answer = request.form.getlist('answer')[i]
+        question_ids = request.form.getlist('question_id')
+        user_answers = request.form.getlist('answer')
+
+        # Vérifier que les données du formulaire existent
+        if not question_ids or not user_answers:
+            flash("Une erreur s'est produite lors de la soumission du formulaire.")
+            return redirect(url_for('index'))
+
+        # Créer la liste des réponses
+        for i in range(len(question_ids)):
             answers.append({
-                'question_id': question_id,
-                'answer': answer
+                'question_id': question_ids[i],
+                'answer': user_answers[i]
             })
 
         # Calculer la durée de l'entretien
@@ -275,6 +327,10 @@ def resultat():
         )
 
         conn.commit()
+
+        # Exporter les résultats vers Excel après chaque simulation
+        export_results_to_excel()
+
         conn.close()
 
         # Stocker les résultats en session pour les pages suivantes
@@ -283,29 +339,21 @@ def resultat():
         session['interview_duration'] = duration
         session['simulation_id'] = simulation_id
 
+        # Rediriger au lieu de rendre le template directement
+        return redirect(url_for('resultat'))
+
+    # Si la méthode est GET, vérifier si les résultats sont en session
+    elif 'results' in session:
         return render_template(
             'resultat.html',
-            username=session['username'],
-            job=session['job'],
-            results=results,
-            overall_score=overall_score,
-            interview_duration=duration
+            username=session.get('username'),
+            job=session.get('job'),
+            results=session.get('results'),
+            overall_score=session.get('overall_score'),
+            interview_duration=session.get('interview_duration')
         )
     else:
-        # Si la méthode est GET, vérifier si les résultats sont en session
-        if 'results' in session:
-            return render_template(
-                'resultat.html',
-                username=session['username'],
-                job=session['job'],
-                results=session['results'],
-                overall_score=session['overall_score'],
-                interview_duration=session['interview_duration']
-            )
-        else:
-            return redirect(url_for('index'))
-
-
+        return redirect(url_for('index'))
 @app.route('/voir_resultats')
 def voir_resultats():
     if 'simulation_id' not in session:
@@ -383,7 +431,7 @@ def admin_dashboard():
 
     conn = get_db_connection()
 
-    # Statistiques générales
+    # Statistiques générales améliorées
     stats = {}
     stats['total_users'] = conn.execute('SELECT COUNT(DISTINCT user_id) FROM simulations').fetchone()[0]
     stats['total_interviews'] = conn.execute('SELECT COUNT(*) FROM simulations').fetchone()[0]
@@ -393,12 +441,44 @@ def admin_dashboard():
         stats['average_score'] = 0
     stats['average_score'] = round(stats['average_score'])
 
-    # Liste des utilisateurs récents
+    # Nouvelles statistiques
+    stats['average_duration'] = conn.execute('SELECT AVG(duration) FROM simulations').fetchone()[0]
+    if stats['average_duration'] is None:
+        stats['average_duration'] = 0
+    stats['average_duration'] = round(stats['average_duration'])
+
+    stats['last_simulation'] = conn.execute('SELECT datetime(MAX(date)) FROM simulations').fetchone()[0]
+
+    # Liste des utilisateurs récents avec plus de détails
     users = conn.execute('''
-        SELECT u.username, u.email, u.etablissement, s.job, s.score, 
-               datetime(s.date) as date
+        SELECT u.id, u.username, u.email, u.etablissement, s.job, s.score, 
+               s.duration, datetime(s.date) as date,
+               (SELECT COUNT(*) FROM simulations WHERE user_id = u.id) as nb_simulations
         FROM users u
         JOIN simulations s ON u.id = s.user_id
+        ORDER BY s.date DESC
+        LIMIT 50
+    ''').fetchall()
+
+    # Détails des simulations récentes
+    simulations = conn.execute('''
+        SELECT s.id, u.username, u.etablissement, s.job, s.score, 
+               s.duration, datetime(s.date) as date,
+               (SELECT COUNT(*) FROM user_answers WHERE simulation_id = s.id) as nb_questions
+        FROM simulations s
+        JOIN users u ON s.user_id = u.id
+        ORDER BY s.date DESC
+        LIMIT 20
+    ''').fetchall()
+
+    # NOUVEAU: Récupérer les réponses récentes des utilisateurs
+    user_responses = conn.execute('''
+        SELECT u.username, s.job, q.question_text, q.user_answer, 
+               q.model_answer, q.score as question_score, q.label, q.feedback,
+               s.id as simulation_id, datetime(s.date) as date
+        FROM user_answers q
+        JOIN simulations s ON q.simulation_id = s.id
+        JOIN users u ON s.user_id = u.id
         ORDER BY s.date DESC
         LIMIT 50
     ''').fetchall()
@@ -466,6 +546,31 @@ def admin_dashboard():
     establishment_names = [e['etablissement'] for e in establishment_stats]
     establishment_scores = [round(e['avg_score']) for e in establishment_stats]
 
+    # Ajout d'un résumé par établissement plus détaillé
+    establishment_details = conn.execute('''
+        SELECT u.etablissement, 
+               COUNT(DISTINCT u.id) as users_count,
+               COUNT(s.id) as simulations_count,
+               AVG(s.score) as avg_score,
+               MAX(s.score) as max_score,
+               MIN(s.score) as min_score,
+               AVG(s.duration) as avg_duration
+        FROM users u
+        JOIN simulations s ON u.id = s.user_id
+        GROUP BY u.etablissement
+        ORDER BY avg_score DESC
+    ''').fetchall()
+
+    # Liste de questions les plus difficiles
+    hardest_questions = conn.execute('''
+        SELECT question_text, AVG(score) as avg_score, COUNT(*) as attempts
+        FROM user_answers
+        GROUP BY question_text
+        HAVING COUNT(*) > 1
+        ORDER BY avg_score ASC
+        LIMIT 10
+    ''').fetchall()
+
     # Liste des établissements pour le filtre
     establishments = conn.execute('''
         SELECT DISTINCT etablissement FROM users
@@ -490,6 +595,7 @@ def admin_dashboard():
         'admin.html',
         stats=stats,
         users=users,
+        simulations=simulations,
         jobs=JOBS,
         job_names=job_names,
         job_scores=job_scores,
@@ -501,8 +607,23 @@ def admin_dashboard():
         establishment_names=establishment_names,
         establishment_scores=establishment_scores,
         establishments=establishments,
-        all_questions=all_questions
+        establishment_details=establishment_details,
+        hardest_questions=hardest_questions,
+        all_questions=all_questions,
+        user_responses=user_responses  # NOUVEAU: Passage des réponses utilisateurs au template
     )
+@app.route('/admin/export_excel')
+def admin_export_excel():
+    if 'admin' not in session:
+        return redirect(url_for('admin_login'))
+
+    export_results_to_excel()
+
+    # Retourner le fichier Excel au navigateur
+    return send_file('resultats.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                     as_attachment=True,
+                     download_name='resultats_simujob.xlsx')
 
 
 @app.route('/admin/user_details/<username>')
@@ -775,8 +896,6 @@ def delete_user(username):
         conn.close()
         print(f"Erreur lors de la suppression de l'utilisateur: {e}")
         return jsonify({'success': False, 'message': str(e)})
-
-
 @app.route('/admin/update_analytics')
 def update_analytics():
     if 'admin' not in session:
@@ -792,7 +911,17 @@ def update_analytics():
 
     return jsonify({'success': True})
 
+@app.route('/debug_answers')
+def debug_answers():
+    conn = get_db_connection()
+    answers = conn.execute('SELECT * FROM user_answers LIMIT 10').fetchall()
+    conn.close()
 
+    result = []
+    for answer in answers:
+        result.append(dict(answer))
+
+    return jsonify(result)
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin', None)
